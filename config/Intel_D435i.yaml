@@ -68,3 +68,10 @@ Viewer.ViewpointY: -0.65
 Viewer.ViewpointZ: -1.9
 Viewer.ViewpointF: 400
 
+#--------------------------------------------------------------------------------------------
+# Semantic Mapping
+#--------------------------------------------------------------------------------------------
+Mapping.Thprob: 0.95
+Mapping.Thdepth: 0.02
+Mapping.SavePCDPath: ./SemanticMappingResult.pcd
+Mapping.PythonHome: /home/xshen/Anaconda3/envs/deeplab-pytorch

@@ -82,7 +82,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpMap);
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
-    mpPointCloudMapping = make_shared<PointCloudMapping>(0.01);
+    double thprob = fsSettings["Mapping.Thprob"];
+    double thdepth = fsSettings["Mapping.Thdepth"];
+    string savePCDPath = fsSettings["Mapping.SavePCDPath"];
+    string pythonHome = fsSettings["Mapping.PythonHome"];
+    mpPointCloudMapping = make_shared<PointCloudMapping>(savePCDPath, pythonHome, thprob, thdepth);
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)

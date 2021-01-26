@@ -103,11 +103,12 @@ ${PCL_LIBRARIES}
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
 add_executable(rgbd_tum
-Examples/RGB-D/rgbd_tum.cc)
+Examples/RGB-D/rgbd_tum.cc
+)
+
+
 target_link_libraries(rgbd_tum 
 ${PROJECT_NAME}
-# "/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/libpython3.6m.so"
-# "/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6"
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)

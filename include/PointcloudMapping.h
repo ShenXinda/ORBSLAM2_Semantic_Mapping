@@ -44,7 +44,7 @@ class ProbPoint;
 
 class PointCloudMapping {
     public:
-        PointCloudMapping(double resolution=0.01);
+        PointCloudMapping(string savePCDPath, string pythonHome, double thprob=0.95, double thdepth=0.02);
         ~PointCloudMapping();
         void insertKeyFrame(KeyFrame* kf, const cv::Mat& color, const cv::Mat& depth); // 传入的深度图像的深度值单位已经是m
         void requestFinish();
@@ -89,9 +89,10 @@ class PointCloudMapping {
 
         std::map<int, ProbPoint*> mvPoint2ProbPoint;
 
-
-        double mthprob;
-        double mthdepth;
+        string mSavePCDPath;
+        string mPythonHome;
+        double mThdepth;
+        double mThprob;
 };
 
 }

@@ -3,11 +3,8 @@ using namespace cv;
 
 namespace ORB_SLAM2 {
 
-PointCloudMapping::PointCloudMapping(double resolution): mCx(0), mCy(0), mFx(0), mFy(0), mbShutdown(false), mbFinish(false)
+PointCloudMapping::PointCloudMapping(string savePCDPath, string pythonHome, double thprob, double thdepth): mCx(0), mCy(0), mFx(0), mFy(0), mThprob(thprob), mSavePCDPath(savePCDPath), mThdepth(thdepth), mPythonHome(pythonHome), mbShutdown(false), mbFinish(false)
 {
-    mthprob = 0.95;
-    mthdepth = 0.02;
-
     initColorMap();
 
     mPointCloud = boost::make_shared<PointCloud>();  // 用boost::make_shared<>
@@ -98,9 +95,8 @@ void PointCloudMapping::showPointCloud()
     }
 
     // 存储点云
-    // string save_path = "/home/xshen/pcd_files/resultPointCloudFile.pcd";
-    // pcl::io::savePCDFile(save_path, *mPointCloud);
-    // cout << "save pcd files to :  " << save_path << endl;
+    // pcl::io::savePCDFile(mSavePCDPath, *mPointCloud);
+    // cout << "save pcd files to :  " << mSavePCDPath << endl;
     mbFinish = true;
 }
 
@@ -217,7 +213,7 @@ void PointCloudMapping::assoiateAndUpdate(int channels, int height, int width, P
             }
         }
         // 此处有个深度误差阈值
-        if (minValue>mthdepth || w==-1 || h==-1) {
+        if (minValue>mThdepth || w==-1 || h==-1) {
             continue;
         }
         imD.ptr<float>(h)[w] = 0;  // 已经匹配过的像素深度设置为0
@@ -231,7 +227,7 @@ void PointCloudMapping::assoiateAndUpdate(int channels, int height, int width, P
         
         int label = probPoint->BayesianUpdate(vNewProbs);
 
-        if (label == -1 || (probPoint->getProbVector())[label] < mthprob) {
+        if (label == -1 || (probPoint->getProbVector())[label] < mThprob) {
             continue;
         }
 
@@ -265,12 +261,12 @@ void PointCloudMapping::getProbMap(PyObject* pModule, PyObject* pArg, cv::Mat& i
 
     if (PyList_Check(pReturn)) { // 检查是否为List对象
         int SizeOfList = PyList_Size(pReturn);  //List对象的大小
-        
+
         for (int Index_i = 0; Index_i < SizeOfList; Index_i++) {
             PyArrayObject *ListItem = (PyArrayObject *)PyList_GetItem(pReturn, Index_i);//读取List中的PyArrayObject对象，这里需要进行强制转换。
             int channels = ListItem->dimensions[0], height = ListItem->dimensions[1], width = ListItem->dimensions[2];
             numberOfLabels = channels;
-
+ 
             if (mSegPointCloud->points.size()!=0) { // 地图中存在点，先进行关联
                 assoiateAndUpdate(channels, height, width, ListItem, imD, pose);
             }
@@ -325,28 +321,29 @@ void PointCloudMapping::getProbMap(PyObject* pModule, PyObject* pArg, cv::Mat& i
 void PointCloudMapping::runSegmantation() 
 {
     
-    // Py_SetPythonHome("/home/xshen/Anaconda3/envs/deeplab-pytorch");  // ??ImportError: No module named site
+    Py_SetPythonHome(mPythonHome);  // ??ImportError: No module named site
     Py_Initialize(); // 对python进行初始化，无返回值。使用py_IsInitialized检查系统是否初始化成功。
 
-    // import_array();  // 遇到问题RuntimeError: _ARRAY_API is not PyCObject object？
+    // anaconda下deeplab-pytorch环境（Py_SetPythonHome的替换方案）
+    // PyRun_SimpleString("import sys");   // sys 模块包含了与 Python 解释器和它的环境有关的函数。
+    // PyRun_SimpleString("sys.path = []");
+    // PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python36.zip')");
+    // PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6')");
+    // PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/lib-dynload')");
+    // PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/site-packages')");
+    // PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/site-packages/tqdm-4.7.2-py3.6.egg')");
 
-    // anaconda 下 deeplab-pytorch 环境
-    PyRun_SimpleString("import sys");   // sys 模块包含了与 Python 解释器和它的环境有关的函数。
-    PyRun_SimpleString("sys.path = []");
-    PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python36.zip')");
-    PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6')");
-    PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/lib-dynload')");
-    PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/site-packages')");
-    PyRun_SimpleString("sys.path.append('/home/xshen/Anaconda3/envs/deeplab-pytorch/lib/python3.6/site-packages/tqdm-4.7.2-py3.6.egg')");
-
+    import_array();  // 遇到问题RuntimeError: _ARRAY_API is not PyCObject object？
     // 以下替代了import_array();
-    PyObject *numpy = PyImport_ImportModule("numpy.core.multiarray");
-    PyObject *c_api = NULL;
-    c_api = PyObject_GetAttrString(numpy, "_ARRAY_API");
-    PyArray_API = (void **)PyCObject_AsVoidPtr(c_api);
+    // PyObject *numpy = PyImport_ImportModule("numpy.core.multiarray");
+    // PyObject *c_api = NULL;
+    // c_api = PyObject_GetAttrString(numpy, "_ARRAY_API");
+    // PyArray_API = (void **)PyCObject_AsVoidPtr(c_api);
 
     // 设置运行的 python 文件路径
-    PyRun_SimpleString("sys.path.append('/home/xshen/my_workspace/deeplab-pytorch')");
+    PyRun_SimpleString("import os");
+    PyRun_SimpleString("basepath = os.getcwd()");
+    PyRun_SimpleString("sys.path.append(basepath+'/deeplabv2')");
 
     
     PyObject* pModule = nullptr;
@@ -356,7 +353,7 @@ void PointCloudMapping::runSegmantation()
     
     pModule = PyImport_ImportModule("inference"); 
     
-    pFunc= PyObject_GetAttrString(pModule, "init");   //这里是要调用的函数名
+    pFunc= PyObject_GetAttrString(pModule, "init");   // 这里是要调用的函数名
     PyObject_CallObject(pFunc, pArg);
 
     pcl::visualization::CloudViewer viewer("Pointcloud viewer");
@@ -415,9 +412,8 @@ void PointCloudMapping::runSegmantation()
     voxel.filter(*mSegPointCloud);
 
     // 存储点云
-    string save_path = "/home/xshen/pcd_files/resultPointCloudFile.pcd";
-    pcl::io::savePCDFile(save_path, *mSegPointCloud);
-    cout << "save pcd files to :  " << save_path << endl;
+    pcl::io::savePCDFile(mSavePCDPath, *mSegPointCloud);
+    cout << "save pcd files to :  " << mSavePCDPath << endl;
 
     mbFinishSeg = true;
 }
