@@ -3,7 +3,7 @@ using namespace cv;
 
 namespace ORB_SLAM2 {
 
-PointCloudMapping::PointCloudMapping(string savePCDPath, string pythonHome, double thprob, double thdepth): mCx(0), mCy(0), mFx(0), mFy(0), mThprob(thprob), mSavePCDPath(savePCDPath), mThdepth(thdepth), mPythonHome(pythonHome), mbShutdown(false), mbFinish(false)
+PointCloudMapping::PointCloudMapping(string savePCDPath, string pythonHome, double thprob, double thdepth): mCx(0), mCy(0), mFx(0), mFy(0), mThprob(thprob), mSavePCDPath(savePCDPath), mThdepth(thdepth), mPythonHome(pythonHome), mbShutdown(false), mbFinish(false), mbFinishSeg(false)
 {
     initColorMap();
 
